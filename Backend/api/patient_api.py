@@ -7,6 +7,9 @@ from ..models.eeg_model import (
     list_messages_for_user, list_tasks_for_user, update_task_completion
 )
 from ..models.user_model import find_user_by_id
+from ..extensions import get_db
+from bson import ObjectId
+
 
 patient_bp = Blueprint("patient", __name__)
 
@@ -27,9 +30,9 @@ def get_profile():
         "profile": user.get("profile", {}),
     })
 
-@patient_bp.route("/profile", methods=["PUT"])
+@patient_bp.route("/profile", methods=["PUT"], endpoint="profile_update_put")
 @requires_roles("patient")
-def update_profile():
+def update_profile_put():
     user_id = request.user_id
     data = request.get_json() or {}
     # only allow certain fields to be updated
@@ -155,3 +158,15 @@ def complete_task(task_id):
         "id": str(updated["_id"]),
         "completed": updated.get("completed")
     }})
+
+@patient_bp.route("/profile", methods=["PUT"])
+@requires_roles("patient")
+def update_profile():
+    user_id = request.user_id
+    data = request.get_json() or {}
+    # only allow certain fields to be updated
+    allowed = {"name", "profile"}
+    update = {k: data[k] for k in data if k in allowed}
+    db = get_db()
+    db['users'].update_one({"_id": ObjectId(user_id)}, {"$set": update})
+    return jsonify({"ok": True})

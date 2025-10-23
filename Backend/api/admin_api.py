@@ -1,6 +1,8 @@
+# Backend/api/admin_api.py
 from flask import Blueprint, request, jsonify
 from ..models.user_model import find_user_by_id, get_db
 from ..utils.authorization import requires_roles
+from ..extensions import get_db
 from bson import ObjectId
 
 admin_bp = Blueprint("admin", __name__)

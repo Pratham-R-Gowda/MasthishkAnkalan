@@ -1,41 +1,56 @@
-import React, { useEffect, useState } from "react";
-import api from "../services/apiClient";
+// frontend/src/pages/PatientDashboard.jsx
+import React from "react";
+import { Routes, Route, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import Tests from "./Patient/Tests";
+import Inbox from "./Patient/Inbox";
+import TestHistory from "./Patient/TestHistory";
+import Tasks from "./Patient/Tasks";
 
 export default function PatientDashboard() {
-  const { user, loading } = useAuth();
-  const [profile, setProfile] = useState(null);
-
-  useEffect(() => {
-    (async () => {
-      try {
-        const res = await api.get("/auth/me");
-        setProfile(res.data);
-      } catch (e) {
-        setProfile(null);
-      }
-    })();
-  }, []);
-
-  if (loading) return <div className="p-4">Loading...</div>;
+  const navigate = useNavigate();
+  const { user } = useAuth();
 
   return (
-    <div className="p-6">
-      <h1 className="text-2xl font-bold mb-4">Patient Dashboard</h1>
+    <div className="min-h-screen flex bg-gray-50">
+      <aside className="w-72 bg-white border-r p-6 flex flex-col justify-between">
+        <div>
+          <div className="mb-6">
+            <div className="text-xl font-bold">Patient</div>
+            <div className="text-sm text-gray-500">{user?.name}</div>
+          </div>
 
-      <div className="bg-white p-4 rounded shadow">
-        <p><strong>Name:</strong> {profile?.name || user?.name}</p>
-        <p><strong>Email:</strong> {profile?.email || user?.email}</p>
-        <p><strong>Role:</strong> {profile?.role || user?.role}</p>
-      </div>
+          <nav className="space-y-3">
+            <button onClick={() => navigate("/patient/tests")} className="w-full text-left p-3 rounded hover:bg-gray-100">TEST</button>
+            <button onClick={() => navigate("/patient/inbox")} className="w-full text-left p-3 rounded hover:bg-gray-100">INBOX</button>
+            <button onClick={() => navigate("/patient/history")} className="w-full text-left p-3 rounded hover:bg-gray-100">TEST HISTORY</button>
+            <button onClick={() => navigate("/patient/tasks")} className="w-full text-left p-3 rounded hover:bg-gray-100">TASKS TO DO</button>
+          </nav>
+        </div>
 
-      <div className="mt-6">
-        <h2 className="text-xl font-semibold mb-2">Actions</h2>
-        <ul className="list-disc pl-6">
-          <li>Upload EEG session (coming soon)</li>
-          <li>View AI results & doctor reports (coming soon)</li>
-        </ul>
-      </div>
+        <div className="space-y-2">
+          <button onClick={() => navigate("/patient/profile")} className="w-full p-3 rounded flex items-center gap-3 hover:bg-gray-100">
+            <span className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">👤</span>
+            <span>Profile</span>
+          </button>
+          <button onClick={() => navigate("/patient/settings")} className="w-full p-3 rounded flex items-center gap-3 hover:bg-gray-100">
+            <span className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">⚙️</span>
+            <span>Settings</span>
+          </button>
+        </div>
+      </aside>
+
+      <main className="flex-1 p-6">
+        <Routes>
+          <Route path="/" element={<div className="text-2xl">Welcome, {user?.name || "Patient"}</div>} />
+          <Route path="tests" element={<Tests />} />
+          <Route path="inbox" element={<Inbox />} />
+          <Route path="history" element={<TestHistory />} />
+          <Route path="tasks" element={<Tasks />} />
+          <Route path="profile" element={<div>Profile page coming soon</div>} />
+          <Route path="settings" element={<div>Settings page coming soon</div>} />
+        </Routes>
+      </main>
     </div>
   );
 }

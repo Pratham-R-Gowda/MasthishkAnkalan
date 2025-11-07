@@ -1,3 +1,4 @@
+# Backend/__init__.py
 from flask import Flask
 from .config import Config
 from .extensions import close_db, get_db
@@ -6,6 +7,7 @@ from .api.admin_api import admin_bp
 from .api.patient_api import patient_bp
 from .api.doctor_api import doctor_bp
 from .api.caretaker_api import caretaker_bp
+from .api.message_api import message_bp
 from flask_cors import CORS
 
 def create_app(config_class=Config):
@@ -27,6 +29,8 @@ def create_app(config_class=Config):
     app.register_blueprint(doctor_bp, url_prefix="/api/doctor")
 
     app.register_blueprint(caretaker_bp, url_prefix="/api/caretaker")
+
+    app.register_blueprint(message_bp)
 
     # simple test route
     @app.route("/api/health")

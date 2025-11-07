@@ -1,81 +1,76 @@
-// frontend/src/pages/Doctor/Outbox.jsx
-import React, { useState, useEffect } from "react";
-import api from "../../services/apiClient";
-import { useSearchParams } from "react-router-dom";
+// frontend/src/pages/Patient/Inbox.jsx (same pattern for Caretaker/Doctor inbox)
+import React, { useEffect, useState } from "react";
+import { fetchInbox } from "../../services/messageServices";
+import { useAuth } from "../../context/AuthContext";
 
-export default function DoctorOutbox() {
-  const [searchParams] = useSearchParams();
-  const prePatient = searchParams.get("patientId") || "";
-  const [patientId, setPatientId] = useState(prePatient);
-  const [sessionId, setSessionId] = useState("");
-  const [subject, setSubject] = useState("Prescription / Report");
-  const [body, setBody] = useState("");
-  const [reportJson, setReportJson] = useState(""); // optional structured report
-  const [msg, setMsg] = useState("");
+export default function Inbox() {
+  const { user } = useAuth();
+  const [messages, setMessages] = useState([]);
 
   useEffect(() => {
-    if (prePatient) setPatientId(prePatient);
-  }, [prePatient]);
-
-  const send = async () => {
-    setMsg("");
-    if (!patientId) {
-      setMsg("Patient ID required");
-      return;
-    }
-    try {
-      let reportBody = {};
-      if (reportJson) {
-        try {
-          reportBody = JSON.parse(reportJson);
-        } catch (e) {
-          setMsg("Report JSON invalid");
-          return;
-        }
+    if (!user) return;
+    (async () => {
+      try {
+        const res = await fetchInbox(user.role);
+        setMessages(res.data || []);
+      } catch (err) {
+        console.error("Inbox load failed", err);
       }
-      const payload = {
-        patient_id: patientId,
-        session_id: sessionId || None,
-        report: reportBody,
-        subject,
-        body,
-      };
-      // avoid sending `None` literal
-      if (!payload.session_id) delete payload.session_id;
-      const res = await api.post("/doctor/outbox", payload);
-      setMsg("Sent message: " + (res.data.message_id || "ok"));
-      setBody("");
-      setReportJson("");
-    } catch (e) {
-      setMsg("Error sending message");
-    }
-  };
+    })();
+  }, [user]);
 
   return (
-    <div>
-      <h2 className="text-2xl mb-4">Send Report / Prescription</h2>
+    <div className="p-6">
+      <h2 className="text-2xl font-semibold mb-4">
+        {user?.role === "doctor"
+          ? "Messages from Patients"
+          : "Inbox - Messages from Doctor"}
+      </h2>
 
-      <div className="space-y-3 bg-white p-4 rounded shadow">
-        <label className="text-sm block">Patient ID</label>
-        <input value={patientId} onChange={(e)=>setPatientId(e.target.value)} className="w-full p-2 border rounded" />
+      {messages.length === 0 && <p>No messages yet.</p>}
 
-        <label className="text-sm block mt-2">Session ID (optional)</label>
-        <input value={sessionId} onChange={(e)=>setSessionId(e.target.value)} className="w-full p-2 border rounded" />
+      {messages.map((m) => (
+        <div
+          key={m.id || m._id}
+          className="border p-3 mb-3 rounded bg-white shadow-sm"
+        >
+          <p>
+            <strong>From:</strong>{" "}
+            {m.sender_role
+              ? m.sender_role
+              : m.from_id
+              ? `User ${m.from_id}`
+              : "Unknown"}
+          </p>
+          <p>
+            <strong>Subject:</strong> {m.subject || "No subject"}
+          </p>
+          <p>{m.body || "No message content"}</p>
 
-        <label className="text-sm block mt-2">Subject</label>
-        <input value={subject} onChange={(e)=>setSubject(e.target.value)} className="w-full p-2 border rounded" />
+          {/* If AI result or metadata present */}
+          {m.metadata?.session_id && (
+            <p className="text-sm text-gray-500">
+              Linked session: {m.metadata.session_id}
+            </p>
+          )}
 
-        <label className="text-sm block mt-2">Message</label>
-        <textarea value={body} onChange={(e)=>setBody(e.target.value)} className="w-full p-2 border rounded h-28" />
+          {/* If tasks present */}
+          {m.tasks?.length > 0 && (
+            <div>
+              <strong>Tasks:</strong>
+              <ul className="list-disc ml-5 text-sm">
+                {m.tasks.map((t, i) => (
+                  <li key={i}>{t}</li>
+                ))}
+              </ul>
+            </div>
+          )}
 
-        <label className="text-sm block mt-2">Structured report (JSON, optional)</label>
-        <textarea value={reportJson} onChange={(e)=>setReportJson(e.target.value)} className="w-full p-2 border rounded h-28" />
-
-        <div className="flex items-center gap-3">
-          <button onClick={send} className="px-4 py-2 bg-blue-600 text-white rounded">Send</button>
-          {msg && <div className="text-sm text-gray-700">{msg}</div>}
+          <small className="block text-gray-500 mt-2">
+            {new Date(m.created_at || m.timestamp).toLocaleString()}
+          </small>
         </div>
-      </div>
+      ))}
     </div>
   );
 }

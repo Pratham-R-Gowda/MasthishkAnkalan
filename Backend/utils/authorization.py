@@ -2,6 +2,7 @@
 from functools import wraps
 from flask import request, jsonify
 from ..utils.security_utils import decode_token
+# from ..utils.authorization import requires_roles
 
 def requires_roles(*allowed_roles):
     def decorator(f):
@@ -15,10 +16,8 @@ def requires_roles(*allowed_roles):
             if not payload:
                 return jsonify({"error": "invalid_token"}), 401
             role = payload.get("role") or payload.get("role")
-            # Allow if payload role is in allowed_roles
             if allowed_roles and role not in allowed_roles:
                 return jsonify({"error": "forbidden"}), 403
-            # attach user id to request context if needed
             request.user_id = payload.get("sub")
             request.user_role = role
             return f(*args, **kwargs)

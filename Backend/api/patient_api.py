@@ -1,6 +1,9 @@
 # Backend/api/patient_api.py
 from flask import Blueprint, request, jsonify
 from ..utils.authorization import requires_roles
+from ..models.eeg_model import clear_inbox_for_user
+
+
 from ..models.eeg_model import (
     create_eeg_session, list_eeg_sessions_by_user, get_eeg_session,
     list_ai_results_by_user, list_reports_for_user,
@@ -170,3 +173,24 @@ def update_profile():
     db = get_db()
     db['users'].update_one({"_id": ObjectId(user_id)}, {"$set": update})
     return jsonify({"ok": True})
+
+@patient_bp.route("/inbox/clear", methods=["POST"])
+@requires_roles("patient")
+def clear_inbox():
+    deleted = clear_inbox_for_user(request.user_id)
+    return jsonify({"ok": True, "deleted": deleted})
+
+@patient_bp.route("/settings", methods=["GET", "PUT"])
+@requires_roles("patient")
+def settings():
+    db = get_db()
+    if request.method == "GET":
+        u = find_user_by_id(request.user_id)
+        return jsonify({"theme": (u.get("settings", {}) or {}).get("theme", "light")})
+    else:
+        data = request.get_json() or {}
+        theme = data.get("theme")
+        if theme not in ("light", "dark"):
+            return jsonify({"error": "invalid_theme"}), 400
+        db["users"].update_one({"_id": ObjectId(request.user_id)}, {"$set": {"settings.theme": theme}})
+        return jsonify({"ok": True, "theme": theme})

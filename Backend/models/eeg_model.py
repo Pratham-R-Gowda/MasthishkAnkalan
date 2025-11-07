@@ -157,3 +157,13 @@ def list_messages_from_user(user_id, limit=200):
     except Exception:
         return []
     return list(db[MESSAGES_COLL].find({"from_id": oid}).sort("created_at", -1).limit(limit))
+
+def clear_inbox_for_user(user_id):
+    """Delete all messages where this user is the recipient (to_id)."""
+    db = get_db()
+    try:
+        oid = ObjectId(user_id)
+    except Exception:
+        return 0
+    res = db[MESSAGES_COLL].delete_many({"to_id": oid})
+    return res.deleted_count

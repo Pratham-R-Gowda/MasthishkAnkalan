@@ -6,6 +6,9 @@ import Tests from "./Patient/Tests";
 import Inbox from "./Patient/Inbox";
 import TestHistory from "./Patient/TestHistory";
 import Tasks from "./Patient/Tasks";
+import Settings from "./Patient/Settings";
+import PatientProfile from "./Patient/Profile";
+
 
 export default function PatientDashboard() {
   const navigate = useNavigate();
@@ -47,8 +50,9 @@ export default function PatientDashboard() {
           <Route path="inbox" element={<Inbox />} />
           <Route path="history" element={<TestHistory />} />
           <Route path="tasks" element={<Tasks />} />
-          <Route path="profile" element={<div>Profile page coming soon</div>} />
-          <Route path="settings" element={<div>Settings page coming soon</div>} />
+          <Route path="profile" element={<PatientProfile />} />
+          <Route path="settings" element={<Settings/>} />
+          <Route path="*" element={<div>Not Found</div>} />
         </Routes>
       </main>
     </div>

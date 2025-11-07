@@ -1,3 +1,4 @@
+// frontend/src/pages/Patient/Inbox.jsx
 import React, { useEffect, useState } from "react";
 import api from "../../services/apiClient";
 
